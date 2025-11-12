@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Page } from '../types';
-import { HomeIcon, BeakerIcon, ChartBarIcon, DocumentTextIcon, ShieldCheckIcon, SunIcon, MoonIcon } from './icons';
+import { HomeIcon, BeakerIcon, ChartBarIcon, DocumentTextIcon, ShieldCheckIcon, SunIcon, MoonIcon, MenuIcon, XIcon } from './icons';
 
 interface HeaderProps {
   currentPage: Page;
@@ -10,12 +10,19 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, theme, toggleTheme }) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   const navItems = [
     { id: 'home', label: 'Головна', icon: <HomeIcon /> },
     { id: 'analyzer', label: 'Аналіз Кредиту', icon: <BeakerIcon /> },
     { id: 'dashboard', label: 'Панель Моніторингу', icon: <ChartBarIcon /> },
     { id: 'resources', label: 'Ресурси', icon: <DocumentTextIcon /> },
   ] as const;
+
+  const handleNavClick = (page: Page) => {
+    setCurrentPage(page);
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <header className="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-50">
@@ -32,7 +39,7 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, theme, tog
                   {navItems.map((item) => (
                     <button
                       key={item.id}
-                      onClick={() => setCurrentPage(item.id)}
+                      onClick={() => handleNavClick(item.id)}
                       className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
                         currentPage === item.id
                           ? 'bg-blue-600 text-white'
@@ -58,31 +65,39 @@ const Header: React.FC<HeaderProps> = ({ currentPage, setCurrentPage, theme, tog
                   )}
                 </button>
 
-              <div className="md:hidden flex items-center">
-                {/* Mobile menu button can be added here */}
+              <div className="md:hidden flex items-center ml-2">
+                <button
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none"
+                  aria-label="Open main menu"
+                >
+                  {isMobileMenuOpen ? <XIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
+                </button>
               </div>
           </div>
         </div>
       </nav>
-        {/* Mobile Navigation */}
-        <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 grid grid-cols-2 gap-2">
-                 {navItems.map((item) => (
-                    <button
-                        key={item.id}
-                        onClick={() => setCurrentPage(item.id)}
-                        className={`flex items-center justify-center px-3 py-2 rounded-md text-xs font-medium transition-colors duration-200 ${
-                            currentPage === item.id
-                            ? 'bg-blue-600 text-white'
-                            : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                        }`}
-                    >
-                        {React.cloneElement(item.icon, { className: 'h-4 w-4 mr-1' })}
-                        {item.label}
-                    </button>
-                ))}
+        {/* Mobile Navigation Menu */}
+        {isMobileMenuOpen && (
+             <div className="md:hidden absolute top-16 left-0 w-full bg-white dark:bg-gray-800 shadow-lg animate-fade-in-down">
+                <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                     {navItems.map((item) => (
+                        <button
+                            key={item.id}
+                            onClick={() => handleNavClick(item.id)}
+                            className={`flex items-center w-full text-left px-3 py-3 rounded-md text-base font-medium transition-colors duration-200 ${
+                                currentPage === item.id
+                                ? 'bg-blue-600 text-white'
+                                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            }`}
+                        >
+                            {React.cloneElement(item.icon, { className: 'h-5 w-5 mr-3' })}
+                            {item.label}
+                        </button>
+                    ))}
+                </div>
             </div>
-        </div>
+        )}
     </header>
   );
 };

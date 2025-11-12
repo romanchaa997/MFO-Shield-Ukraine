@@ -2,21 +2,10 @@
 import { GoogleGenAI } from "@google/genai";
 import { AnalysisResult, LoanDetails } from '../types';
 
-// The API key is injected by the environment.
-const API_KEY = process.env.API_KEY;
-
-let ai: GoogleGenAI | null = null;
-if (API_KEY) {
-    ai = new GoogleGenAI({ apiKey: API_KEY });
-} else {
-    console.warn("API_KEY environment variable not set. Gemini API features will be disabled.");
-}
+// Per coding guidelines, the API key is assumed to be available in `process.env.API_KEY`.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
 export const generateComplaintDraft = async (loanDetails: LoanDetails, analysisResult: AnalysisResult): Promise<string> => {
-  if (!ai) {
-    return "Помилка: Ключ Gemini API не налаштовано. Функція генерування скарги недоступна.";
-  }
-
   const violationDetails = analysisResult.violations.map(v => `- ${v.type}: Фактична ставка/виплата ${v.actual_rate} перевищує законний ліміт ${v.legal_limit}.`).join('\n');
 
   const prompt = `
