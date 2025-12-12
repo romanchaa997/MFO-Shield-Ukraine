@@ -1,0 +1,79 @@
+version: '3.9'
+
+services:
+  # MFO Shield Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mfo-shield-app
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: info
+    depends_on:
+      - redis
+      - postgres
+    volumes:
+      - app-logs:/app/logs
+    networks:
+      - mfo-shield
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # Redis Cache Layer (for session, rate limiting, caching)
+  redis:
+    image: redis:7-alpine
+    container_name: mfo-shield-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - mfo-shield
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # PostgreSQL Database (optional, for persistence)
+  postgres:
+    image: postgres:15-alpine
+    container_name: mfo-shield-postgres
+    environment:
+      POSTGRES_DB: mfo_shield
+      POSTGRES_USER: mfo_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_default_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - mfo-shield
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mfo_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  app-logs:
+    driver: local
+  redis-data:
+    driver: local
+  postgres-data:
+    driver: local
+
+networks:
+  mfo-shield:
+    driver: bridge
