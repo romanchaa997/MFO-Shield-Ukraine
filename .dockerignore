@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Version Control
+.git
+.gitignore
+
+# Build & Distribution
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.env.local
+.env.*.local
+
+# Testing
+.nyc_output/
+__tests__/coverage/
+
+# Logs
+logs/
+*.log
+
+# Documentation & Config
+docs/
+.gitkeep
+.editorconfig
+
+# Development
+dev/
+examples/
+test/
+spec/
+.eslintrc*
+.prettierrc*
+tsconfig.json
+jest.config.js
+
+# Docker files (don't copy into other containers)
+Dockerfile*
+docker-compose*
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment
+.env
+.env.*
