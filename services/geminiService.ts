@@ -6,6 +6,30 @@ import { AnalysisResult, LoanDetails } from "../types";
 // FIX: Initialize GoogleGenAI with a named apiKey object property.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
+// Кеш для кешування результатів аналізу
+const analysisCache = new Map<string, any>();
+
+// Функція для хешування вхідних даних
+function hashInput(input: string): string {
+  let hash = 0;
+  for (let i = 0; i < input.length; i++) {
+    const char = input.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(16);
+}
+
+// Маскування персональних даних перед відправкою в Gemini
+export function maskSensitiveData(text: string): string {
+  return text
+    .replace(/\b\d{16}\b/g, '[CARD_NUMBER]')
+    .replace(/\b\d{10}\b/g, '[TAX_ID]')
+    .replace(/\b\d{9}\b/g, '[PASSPORT]')
+    .replace(/\b\d{12}\b/g, '[ACCOUNT_NUMBER]')
+    .replace(/[А-Яа-яЇїЄєҐґ\w]+@[А-Яа-яЇїЄєҐґ\w.-]+/g, '[EMAIL]');
+}
+
 const analysisSchema = {
   type: Type.OBJECT,
   properties: {
@@ -131,6 +155,37 @@ const extractionSchema = {
     },
     required: ['principal', 'dailyRate', 'termDays']
 };
+
+// Аналіз кредитного договору з кешуванням
+export async function analyzeLoanAgreementWithCache(
+  fileData: { data: string; mimeType: string },
+): Promise<AnalysisResult | null> {
+  try {
+    // Маскування ПД
+    const maskedData = maskSensitiveData(fileData.data);
+    const cacheKey = hashInput(maskedData);
+    
+    // Перевірка кешу
+    if (analysisCache.has(cacheKey)) {
+      console.log('Using cached analysis result');
+      return analysisCache.get(cacheKey);
+    }
+    
+    // Ключова відправка до Gemini
+    const result = await extractionDetailsFromDocument(fileData);
+    
+    // Збереження в кеш
+    if (result) {
+      analysisCache.set(cacheKey, result);
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error analyzing loan agreement:', error);
+    return null;
+  }
+}
+
 
 export const extractLoanDetailsFromDocument = async (file: { data: string; mimeType: string; }): Promise<Partial<LoanDetails>> => {
     try {
